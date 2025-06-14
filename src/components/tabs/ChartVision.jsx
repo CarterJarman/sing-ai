@@ -4,31 +4,28 @@ import React, { useRef, useState } from "react";
 import { FaCloudUploadAlt, FaBolt, FaCheckCircle, FaRedo } from "react-icons/fa";
 
 function simulateAIAnalysis() {
-  // Returns a thorough, realistic sample analysis each run
   const samples = [
     [
-      "Detected uptrend in past 7 days. Price consistently makes higher lows, with strong support at $1,425 and local resistance at $1,560.",
-      "AI notes a breakout above previous resistance on strong volume. Short-term volatility may increase.",
-      "Support zones: $1,425, $1,380. Resistance zones: $1,560, $1,620.",
-      "No major bearish divergences detected on RSI/MACD.",
-      "Pattern identified: Cup & Handle forming. Target price if confirmed: $1,720.",
-      "Risk: Macro news or BTC dump may trigger stop-loss sweep below $1,425.",
+      "Uptrend detected in the past 7 days with higher lows and strong support at $1,425.",
+      "Breakout above previous resistance confirmed by high volume.",
+      "Support: $1,425, $1,380. Resistance: $1,560, $1,620.",
+      "Cup & Handle pattern forming; if confirmed, target $1,720.",
+      "No major bearish divergences detected.",
+      "Risk: Macro news or BTC dump could trigger stop-loss sweep below $1,425.",
     ],
     [
-      "Detected range-bound action. Price has been consolidating between $0.052 and $0.060 for 10 days.",
-      "Major support: $0.052 (triple-tested). Resistance: $0.060 (multiple rejections).",
-      "AI notes declining volume; likely awaiting catalyst.",
-      "No clear bullish/bearish patterns. Caution advised until breakout/confirmation.",
-      "Sentiment: Neutral. Prepare for sharp move as volatility is compressing.",
+      "Range-bound action: Price consolidating between $0.052 and $0.060.",
+      "Support: $0.052. Resistance: $0.060.",
+      "Declining volume; likely awaiting catalyst.",
+      "Sentiment: Neutral. Volatility compression signals a sharp move soon.",
       "Tip: Watch for fakeouts. Use tight stops.",
     ],
     [
-      "Downtrend in effect. Lower highs and lower lows on daily chart.",
-      "Critical support at $3.40; next level $3.10. Resistance: $3.85 and $4.00.",
+      "Downtrend: Lower highs and lower lows.",
+      "Support at $3.40. Resistance at $3.85 and $4.00.",
       "Bearish engulfing candle detected at recent top.",
-      "AI risk: Sell volume increasing, possible distribution.",
-      "Pattern: Descending channel. Reversal only on breakout + volume.",
-      "No clear bullish divergences yet.",
+      "Sell volume increasing; possible distribution phase.",
+      "Descending channel pattern. Reversal needs breakout plus volume.",
     ],
   ];
   return samples[Math.floor(Math.random() * samples.length)];
@@ -154,6 +151,18 @@ export default function ChartVision() {
               >
                 <FaRedo /> Clear & Upload New Chart
               </button>
+              <div className="mt-4 text-center text-xs text-gray-400">
+                Want real AI chart reading?{" "}
+                <a
+                  href="mailto:founder@yourproject.com"
+                  className="text-blue-400 hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Contact us to integrate AI Vision API
+                </a>
+                .
+              </div>
             </div>
           )}
         </div>

@@ -1,119 +1,138 @@
 // src/components/tabs/Dashboard.jsx
 
-import React, { useState } from "react";
-import { FaStar, FaPlus, FaCog, FaBolt } from "react-icons/fa";
-import { MdRemoveRedEye } from "react-icons/md";
+import React, { useState, useEffect } from "react";
+import { FaStar, FaPlus, FaCog, FaBolt, FaTrash } from "react-icons/fa";
 
-// Demo watchlist coins (could be loaded from localStorage or an API in V2)
-const DEFAULT_WATCHLIST = [
-  {
-    id: "bitcoin",
-    symbol: "BTC",
-    name: "Bitcoin",
-    price: 67123,
-    change24h: 2.15,
-    spark: [64000, 64600, 65500, 65000, 65800, 66000, 67123],
-  },
-  {
-    id: "ethereum",
-    symbol: "ETH",
-    name: "Ethereum",
-    price: 3470,
-    change24h: -1.02,
-    spark: [3300, 3350, 3400, 3425, 3450, 3490, 3470],
-  },
-  {
-    id: "solana",
-    symbol: "SOL",
-    name: "Solana",
-    price: 150.87,
-    change24h: 4.7,
-    spark: [140, 143, 146, 147, 149, 150, 150.87],
-  },
-];
-
-const DEMO_AI_INSIGHTS = [
-  {
-    title: "AI Alert: Unusual volume on ETH",
-    date: "2024-06-10",
-    type: "volume",
-    detail:
-      "Ethereum has experienced a 34% spike in trading volume over the last 24 hours. Technical analysis suggests possible accumulation ahead of volatility. No major whale inflows detected.",
-    severity: "moderate",
-  },
-  {
-    title: "BTC Support Holding Strong",
-    date: "2024-06-09",
-    type: "trend",
-    detail:
-      "Bitcoin is maintaining support at $65,800. AI model projects continued sideways movement unless volume breaks out. Risk: sudden macro event could cause rapid moves.",
-    severity: "info",
-  },
-  {
-    title: "SOL flagged for increased risk",
-    date: "2024-06-08",
-    type: "risk",
-    detail:
-      "Recent onchain analysis suggests possible high-frequency trading manipulation on Solana. Short-term traders should use caution; AI confidence: 80%.",
-    severity: "warning",
-  },
-];
-
-function Sparkline({ data }) {
-  // Simple sparkline renderer (svg)
-  if (!data || data.length < 2) return null;
-  const w = 60,
-    h = 24;
-  const min = Math.min(...data),
-    max = Math.max(...data);
-  const norm = (v) =>
-    h - ((v - min) / (max - min || 1)) * (h - 4) - 2; // 2px margin
-  const pts = data
-    .map((v, i) => `${(i / (data.length - 1)) * (w - 2) + 1},${norm(v)}`)
-    .join(" ");
-  return (
-    <svg width={w} height={h}>
-      <polyline
-        fill="none"
-        stroke="#2563eb"
-        strokeWidth="2"
-        points={pts}
-        style={{ filter: "drop-shadow(0 0 2px #2563eb70)" }}
-      />
-    </svg>
-  );
+// Utility: get/set watchlist from localStorage
+function getStoredWatchlist() {
+  try {
+    const data = JSON.parse(localStorage.getItem("watchlist")) || ["bitcoin", "ethereum"];
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return ["bitcoin", "ethereum"];
+  }
+}
+function setStoredWatchlist(list) {
+  localStorage.setItem("watchlist", JSON.stringify(list));
 }
 
+// Fetch all coins for "add" search
+async function fetchAllCoinsList() {
+  const res = await fetch("https://api.coingecko.com/api/v3/coins/list");
+  if (!res.ok) throw new Error("Failed to fetch coins list");
+  return await res.json();
+}
+
+// Fetch market data for specific coins
+async function fetchMarkets(idsArr) {
+  const ids = idsArr.join(",");
+  const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&per_page=100&page=1&sparkline=false`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch coin markets");
+  return await res.json();
+}
+
+// For demo: fallback news
+const DEMO_NEWS = [
+  {
+    title: "ETH ETF Approval Likely This Month, Says Bloomberg Analyst",
+    url: "https://www.bloomberg.com/crypto/eth-etf-news",
+    source: "Bloomberg",
+    date: "2024-06-12",
+  },
+  {
+    title: "Tether Pauses USDT Minting on Solana Amid Regulatory Scrutiny",
+    url: "https://cointelegraph.com/news/tether-pauses-solana",
+    source: "Cointelegraph",
+    date: "2024-06-11",
+  },
+];
+
 export default function Dashboard() {
-  const [watchlist, setWatchlist] = useState(DEFAULT_WATCHLIST);
-  const [showAdd, setShowAdd] = useState(false);
-  const [addSymbol, setAddSymbol] = useState("");
+  const [watchlist, setWatchlist] = useState(getStoredWatchlist());
+  const [coinData, setCoinData] = useState([]);
+  const [allCoins, setAllCoins] = useState([]);
+  const [search, setSearch] = useState("");
+  const [filteredCoins, setFilteredCoins] = useState([]);
+  const [addOpen, setAddOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+  const [news, setNews] = useState([]);
 
-  // Simulate searching and adding coins
-  const handleAdd = () => {
-    if (!addSymbol) return;
-    const fake = {
-      id: addSymbol.toLowerCase(),
-      symbol: addSymbol.toUpperCase(),
-      name: `DemoCoin (${addSymbol.toUpperCase()})`,
-      price: Math.random() * 1000 + 1,
-      change24h: (Math.random() - 0.5) * 10,
-      spark: Array.from({ length: 7 }, () =>
-        Math.random() * 1000 + 1
-      ),
-    };
-    setWatchlist([...watchlist, fake]);
-    setAddSymbol("");
-    setShowAdd(false);
-  };
+  // Fetch all coin names for add/search
+  useEffect(() => {
+    fetchAllCoinsList()
+      .then(setAllCoins)
+      .catch(() => setAllCoins([]));
+  }, []);
 
-  const handleRemove = (id) => {
-    setWatchlist(watchlist.filter((c) => c.id !== id));
-  };
+  // Fetch live coin data for watchlist
+  useEffect(() => {
+    if (!watchlist.length) {
+      setCoinData([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    fetchMarkets(watchlist)
+      .then(setCoinData)
+      .catch((e) => setErr("Failed to fetch coin data: " + e.message))
+      .finally(() => setLoading(false));
+  }, [watchlist]);
+
+  // Search for coins to add
+  useEffect(() => {
+    if (!search) setFilteredCoins([]);
+    else
+      setFilteredCoins(
+        allCoins
+          .filter(
+            (c) =>
+              c.symbol.toLowerCase().includes(search.toLowerCase()) ||
+              c.id.toLowerCase().includes(search.toLowerCase()) ||
+              c.name.toLowerCase().includes(search.toLowerCase())
+          )
+          .slice(0, 15)
+      );
+  }, [search, allCoins]);
+
+  // Fetch news (simple fallback using demo, or hook up real API)
+  useEffect(() => {
+    setNews(DEMO_NEWS);
+    // For live news: fetch from CryptoPanic API if you have a key
+    // fetch(`https://cryptopanic.com/api/v1/posts/?auth_token=YOUR_TOKEN&public=true`)
+    //   .then(res => res.json())
+    //   .then(data => setNews(data.results || DEMO_NEWS))
+    //   .catch(() => setNews(DEMO_NEWS));
+  }, []);
+
+  function addToWatchlist(id) {
+    if (!watchlist.includes(id)) {
+      const next = [...watchlist, id];
+      setWatchlist(next);
+      setStoredWatchlist(next);
+    }
+    setAddOpen(false);
+    setSearch("");
+  }
+
+  function removeFromWatchlist(id) {
+    const next = watchlist.filter((c) => c !== id);
+    setWatchlist(next);
+    setStoredWatchlist(next);
+  }
+
+  function formatNum(num) {
+    if (num >= 1e12) return (num / 1e12).toFixed(2) + "T";
+    if (num >= 1e9) return (num / 1e9).toFixed(2) + "B";
+    if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
+    if (num >= 1e3) return (num / 1e3).toFixed(2) + "K";
+    return num?.toString() ?? "";
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-2 pt-4 pb-12">
-      {/* Watchlist Section */}
+      {/* Watchlist */}
       <div className="mb-10">
         <div className="flex items-center mb-4 gap-4">
           <FaStar className="text-yellow-400 text-2xl" />
@@ -121,36 +140,56 @@ export default function Dashboard() {
             Your Watchlist
           </h2>
           <button
-            onClick={() => setShowAdd((v) => !v)}
+            onClick={() => setAddOpen((v) => !v)}
             className="bg-[#2563eb] hover:bg-blue-700 transition text-white rounded-xl px-4 py-2 text-sm font-semibold flex items-center gap-2 shadow"
           >
             <FaPlus /> Add Coin
           </button>
         </div>
-        {showAdd && (
-          <div className="flex gap-2 mb-3 items-center">
+        {addOpen && (
+          <div className="flex gap-2 mb-3 items-center flex-wrap">
             <input
               type="text"
-              placeholder="Coin symbol (e.g., DOGE)"
-              value={addSymbol}
-              onChange={(e) => setAddSymbol(e.target.value)}
-              className="rounded-md p-2 text-gray-900"
+              placeholder="Search by symbol, id, or name"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="rounded-md p-2 text-gray-900 min-w-[200px]"
             />
+            {search && (
+              <div className="bg-[#222] border rounded-lg shadow p-2 max-h-40 overflow-auto">
+                {filteredCoins.length === 0 ? (
+                  <div className="text-gray-400 px-2">No coins found</div>
+                ) : (
+                  filteredCoins.map((c) => (
+                    <button
+                      key={c.id}
+                      className="block w-full text-left py-1 px-2 hover:bg-[#2563eb] hover:text-white rounded"
+                      onClick={() => addToWatchlist(c.id)}
+                      disabled={watchlist.includes(c.id)}
+                    >
+                      {c.symbol.toUpperCase()} - {c.name}
+                      {watchlist.includes(c.id) && (
+                        <span className="text-xs text-green-400 ml-2">Added</span>
+                      )}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
             <button
-              onClick={handleAdd}
-              className="bg-[#2563eb] text-white px-3 py-2 rounded font-bold hover:bg-blue-700"
-            >
-              Add
-            </button>
-            <button
-              onClick={() => setShowAdd(false)}
+              onClick={() => {
+                setAddOpen(false);
+                setSearch("");
+              }}
               className="text-sm text-gray-300 hover:underline"
             >
               Cancel
             </button>
           </div>
         )}
-        {watchlist.length === 0 ? (
+        {loading ? (
+          <div className="text-blue-300 text-lg animate-pulse py-8">Loading live prices...</div>
+        ) : coinData.length === 0 ? (
           <div className="bg-[#18181b] rounded-xl p-8 text-center text-gray-400 shadow-inner mt-6">
             No coins in your watchlist. Click <b>Add Coin</b> to start tracking your favorite assets!
           </div>
@@ -163,41 +202,39 @@ export default function Dashboard() {
                   <th className="px-4 py-2">Name</th>
                   <th className="px-4 py-2">Price</th>
                   <th className="px-4 py-2">% 24h</th>
-                  <th className="px-4 py-2">Trend</th>
+                  <th className="px-4 py-2">Market Cap</th>
                   <th className="px-4 py-2">Remove</th>
                 </tr>
               </thead>
               <tbody>
-                {watchlist.map((coin) => (
+                {coinData.map((coin) => (
                   <tr
                     key={coin.id}
                     className="hover:bg-[#222] transition border-b border-[#232]"
                   >
-                    <td className="px-4 py-3 font-bold">{coin.symbol}</td>
+                    <td className="px-4 py-3 font-bold">{coin.symbol.toUpperCase()}</td>
                     <td className="px-4 py-3">{coin.name}</td>
-                    <td className="px-4 py-3">${coin.price.toFixed(2)}</td>
+                    <td className="px-4 py-3">${coin.current_price.toLocaleString()}</td>
                     <td
                       className={`px-4 py-3 font-semibold ${
-                        coin.change24h > 0
+                        coin.price_change_percentage_24h > 0
                           ? "text-green-400"
-                          : coin.change24h < 0
+                          : coin.price_change_percentage_24h < 0
                           ? "text-red-400"
                           : "text-gray-200"
                       }`}
                     >
-                      {coin.change24h > 0 && "+"}
-                      {coin.change24h.toFixed(2)}%
+                      {coin.price_change_percentage_24h > 0 && "+"}
+                      {coin.price_change_percentage_24h?.toFixed(2) ?? "--"}%
                     </td>
-                    <td className="px-4 py-3">
-                      <Sparkline data={coin.spark} />
-                    </td>
+                    <td className="px-4 py-3">${formatNum(coin.market_cap)}</td>
                     <td className="px-4 py-3">
                       <button
                         className="bg-[#222] rounded-full p-2 hover:bg-[#333] text-red-400"
                         title="Remove"
-                        onClick={() => handleRemove(coin.id)}
+                        onClick={() => removeFromWatchlist(coin.id)}
                       >
-                        <MdRemoveRedEye />
+                        <FaTrash />
                       </button>
                     </td>
                   </tr>
@@ -206,70 +243,38 @@ export default function Dashboard() {
             </table>
           </div>
         )}
+        {err && (
+          <div className="text-red-400 text-xs py-2">{err}</div>
+        )}
       </div>
-      {/* AI Insights Section */}
+      {/* AI Insights Section: News Headlines */}
       <div>
         <div className="flex items-center mb-4 gap-3">
           <FaBolt className="text-blue-400 text-xl" />
           <h2 className="text-xl font-bold text-white flex-1">
-            Recent AI Insights
+            Recent Crypto News
           </h2>
           <button className="flex items-center gap-2 px-4 py-2 bg-[#18181b] border border-[#222] rounded-lg text-gray-300 hover:bg-[#2563eb]/20 transition">
             <FaCog /> Customize
           </button>
         </div>
-        {DEMO_AI_INSIGHTS.length === 0 ? (
-          <div className="bg-[#18181b] rounded-xl p-8 text-center text-gray-400 shadow-inner mt-6">
-            No insights yet. (They will appear here automatically as you use the app!)
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {DEMO_AI_INSIGHTS.map((insight, idx) => (
-              <div
-                key={idx}
-                className={`rounded-xl border shadow p-4 ${
-                  insight.severity === "warning"
-                    ? "border-yellow-500"
-                    : insight.severity === "moderate"
-                    ? "border-blue-500"
-                    : "border-gray-700"
-                } bg-[#18181b]`}
-              >
-                <div className="flex justify-between items-center mb-1">
-                  <div className="font-semibold text-white">
-                    {insight.title}
-                  </div>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded ${
-                      insight.severity === "warning"
-                        ? "bg-yellow-900 text-yellow-300"
-                        : insight.severity === "moderate"
-                        ? "bg-blue-900 text-blue-300"
-                        : "bg-gray-700 text-gray-200"
-                    }`}
-                  >
-                    {insight.type.toUpperCase()}
-                  </span>
-                </div>
-                <div className="text-gray-400 text-xs mb-1">
-                  {insight.date}
-                </div>
-                <div className="text-gray-200 text-sm">
-                  {insight.detail}
-                </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {news.map((item, idx) => (
+            <div
+              key={idx}
+              className="rounded-xl border shadow p-4 border-blue-500 bg-[#18181b]"
+            >
+              <div className="font-semibold text-white mb-2">
+                <a href={item.url} className="hover:underline text-blue-400" target="_blank" rel="noopener noreferrer">
+                  {item.title}
+                </a>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-      {/* Customize Widget Section (optional future) */}
-      <div className="mt-10 flex flex-col items-center">
-        <span className="text-gray-400 text-lg mb-2">
-          Want to customize your dashboard?
-        </span>
-        <button className="px-6 py-2 bg-[#2563eb] text-white font-bold rounded-xl shadow hover:bg-blue-700">
-          Add Widget (coming soon)
-        </button>
+              <div className="text-gray-400 text-xs">
+                {item.source} — {item.date}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

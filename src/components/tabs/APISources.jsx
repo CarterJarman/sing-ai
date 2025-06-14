@@ -1,49 +1,49 @@
 // src/components/tabs/APISources.jsx
 
 import React, { useState } from "react";
-import { FaNetworkWired, FaKey, FaPlug } from "react-icons/fa";
+import { FaNetworkWired, FaKey, FaPlug, FaLock } from "react-icons/fa";
 
-const APIS = [
+const API_LIST = [
   {
     id: "coingecko",
     name: "CoinGecko",
     enabled: true,
-    features: ["Scanner", "New Coins", "Tokenomics"],
+    features: ["Dashboard", "Scanner", "New Coins", "Tokenomics", "AI Insights (Trending)"],
     apiKey: null,
-    custom: false,
     docs: "https://www.coingecko.com/en/api/documentation",
+    needsKey: false,
   },
   {
     id: "dexscreener",
     name: "DexScreener",
-    enabled: false,
-    features: ["DEX New Coins", "Chart Vision (future)"],
+    enabled: true,
+    features: ["New Coins (DEX)"],
     apiKey: null,
-    custom: false,
     docs: "https://docs.dexscreener.com",
+    needsKey: false,
   },
   {
-    id: "cmc",
-    name: "CoinMarketCap",
+    id: "cryptopanic",
+    name: "CryptoPanic",
     enabled: false,
-    features: ["Scanner", "Tokenomics"],
+    features: ["AI Insights (News & Sentiment)"],
     apiKey: "",
-    custom: false,
-    docs: "https://coinmarketcap.com/api/documentation/v1/",
+    docs: "https://cryptopanic.com/developers/api/",
+    needsKey: true,
   },
   {
     id: "custom",
     name: "Custom API",
     enabled: false,
-    features: ["(Any - for developers)"],
+    features: ["(Advanced / Developers)"],
     apiKey: "",
-    custom: true,
     docs: "",
+    needsKey: true,
   },
 ];
 
 export default function APISources() {
-  const [sources, setSources] = useState(APIS);
+  const [sources, setSources] = useState(API_LIST);
 
   function toggleEnabled(idx) {
     setSources((prev) =>
@@ -68,9 +68,9 @@ export default function APISources() {
       <div className="bg-[#18181b] border border-[#232] rounded-2xl shadow-xl p-6 mb-6">
         <div className="text-gray-200 mb-2">
           <FaPlug className="inline mr-2 text-blue-400" />
-          Enable or disable which APIs power your data. <br className="hidden md:block"/>
-          <span className="text-sm text-gray-400">
-            (You can safely toggle—demo data is used unless a real API key is added.)
+          Enable or disable which APIs power your app.  
+          <span className="text-sm text-gray-400 block">
+            (Settings saved per session for now. Feature list updates in real time!)
           </span>
         </div>
         <table className="min-w-full mt-3">
@@ -116,7 +116,7 @@ export default function APISources() {
                   {src.features.join(", ")}
                 </td>
                 <td className="px-4 py-2">
-                  {src.custom || src.id === "cmc" ? (
+                  {src.needsKey ? (
                     <input
                       type="text"
                       value={src.apiKey || ""}
@@ -129,7 +129,7 @@ export default function APISources() {
                   )}
                 </td>
                 <td className="px-4 py-2">
-                  {src.custom && (
+                  {src.needsKey && (
                     <button className="bg-[#2563eb] text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700">
                       <FaKey className="inline mr-1" />
                       Save Key
@@ -142,8 +142,8 @@ export default function APISources() {
         </table>
       </div>
       <div className="mt-6 text-sm text-gray-400 text-center">
-        Want to add a new source or connect your own API? <br />
-        Contact support or <a href="#" className="text-blue-400 hover:underline">request a feature</a>.
+        Want to add or suggest new sources? <br />
+        <a href="#" className="text-blue-400 hover:underline">Contact support</a>.
       </div>
     </div>
   );

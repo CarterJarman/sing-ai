@@ -1,91 +1,89 @@
 // src/components/tabs/AIInsights.jsx
 
-import React, { useState } from "react";
-import { FaRobot, FaShieldAlt, FaBolt, FaSmile, FaFrown, FaMeh } from "react-icons/fa";
+import React, { useEffect, useState } from "react";
+import { FaRobot, FaBolt, FaFrown, FaSmile, FaMeh } from "react-icons/fa";
 
-// Demo news & sentiment
-const DEMO_NEWS = [
-  {
-    id: 1,
-    title: "ETH ETF Approval Likely This Month, Says Bloomberg Analyst",
-    url: "https://www.bloomberg.com/crypto/eth-etf-news",
-    source: "Bloomberg",
-    date: "2024-06-12",
-    sentiment: "bullish",
-    summary: "Institutional demand for Ethereum surges after ETF rumors.",
-  },
-  {
-    id: 2,
-    title: "Tether Pauses USDT Minting on Solana Amid Regulatory Scrutiny",
-    url: "https://cointelegraph.com/news/tether-pauses-solana",
-    source: "Cointelegraph",
-    date: "2024-06-11",
-    sentiment: "bearish",
-    summary: "Pausing mints raises concerns over stablecoin compliance and liquidity.",
-  },
-  {
-    id: 3,
-    title: "Vitalik Buterin Proposes Ethereum Scaling Roadmap",
-    url: "https://twitter.com/VitalikButerin/status/179231232323",
-    source: "Twitter",
-    date: "2024-06-10",
-    sentiment: "neutral",
-    summary: "Focus on Layer 2s and data availability for long-term growth.",
-  },
-];
-
-// Simulated AI risk/insight
-const DEMO_RISKS = [
-  {
-    type: "Regulation",
-    risk: "Possible SEC announcement on altcoins classified as securities.",
-    severity: "high",
-  },
-  {
-    type: "Security",
-    risk: "DeFi exploit volume up 12% week-on-week; 4 new vulnerabilities disclosed.",
-    severity: "moderate",
-  },
-  {
-    type: "Sentiment",
-    risk: "Social sentiment mixed: memecoins overheating, majors consolidating.",
-    severity: "info",
-  },
-];
-
-function sentimentIcon(s) {
-  if (s === "bullish")
-    return <FaSmile className="text-green-400 inline mb-1" title="Bullish" />;
-  if (s === "bearish")
-    return <FaFrown className="text-red-400 inline mb-1" title="Bearish" />;
-  return <FaMeh className="text-yellow-400 inline mb-1" title="Neutral" />;
-}
-
-function riskColor(sev) {
-  return sev === "high"
-    ? "bg-red-900 border-red-500 text-red-100"
-    : sev === "moderate"
-    ? "bg-yellow-900 border-yellow-500 text-yellow-100"
-    : "bg-blue-900 border-blue-500 text-blue-100";
-}
+const CRYPTOPANIC_KEY = ""; // <-- Paste your API key here if you have one
 
 export default function AIInsights() {
-  const [news, setNews] = useState(DEMO_NEWS);
-  const [risks, setRisks] = useState(DEMO_RISKS);
-  const [thinking, setThinking] = useState(false);
+  const [news, setNews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [sentiment, setSentiment] = useState("neutral");
 
-  function runAI() {
-    setThinking(true);
-    setTimeout(() => {
-      // Simulate adding a random insight/news (rotate)
-      setNews((prev) =>
-        [prev[prev.length - 1], ...prev.slice(0, prev.length - 1)]
-      );
-      setRisks((prev) =>
-        [prev[prev.length - 1], ...prev.slice(0, prev.length - 1)]
-      );
-      setThinking(false);
-    }, 2000);
+  useEffect(() => {
+    setLoading(true);
+    if (CRYPTOPANIC_KEY) {
+      // Fetch real news from CryptoPanic
+      fetch(
+        `https://cryptopanic.com/api/v1/posts/?auth_token=${CRYPTOPANIC_KEY}&public=true`
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          setNews(
+            (data.results || []).map((item) => ({
+              title: item.title,
+              url: item.url,
+              source: item.source?.title ?? "News",
+              date: item.created_at?.slice(0, 10),
+              summary: item.domain,
+              sentiment: item.votes?.positive > item.votes?.negative
+                ? "bullish"
+                : item.votes?.negative > item.votes?.positive
+                ? "bearish"
+                : "neutral",
+            }))
+          );
+          setSentiment("neutral"); // You can improve this by aggregating sentiment from posts
+        })
+        .catch(() => setNews([]))
+        .finally(() => setLoading(false));
+    } else {
+      // Fallback: Trending coins and demo news
+      fetch(
+        "https://api.coingecko.com/api/v3/search/trending"
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          setNews(
+            (data.coins || []).map((c) => ({
+              title: `${c.item.symbol}: ${c.item.name} is trending`,
+              url: `https://www.coingecko.com/en/coins/${c.item.id}`,
+              source: "CoinGecko",
+              date: new Date().toISOString().slice(0, 10),
+              summary: `Rank: ${c.item.market_cap_rank}`,
+              sentiment: c.item.score < 3 ? "bearish" : c.item.score > 4 ? "bullish" : "neutral",
+            }))
+          );
+          setSentiment("neutral");
+        })
+        .catch(() =>
+          setNews([
+            {
+              title: "ETH ETF Approval Likely This Month, Says Bloomberg Analyst",
+              url: "#",
+              source: "Bloomberg",
+              date: "2024-06-12",
+              summary: "",
+              sentiment: "bullish",
+            },
+            {
+              title: "Tether Pauses USDT Minting on Solana Amid Regulatory Scrutiny",
+              url: "#",
+              source: "Cointelegraph",
+              date: "2024-06-11",
+              summary: "",
+              sentiment: "bearish",
+            },
+          ])
+        )
+        .finally(() => setLoading(false));
+    }
+  }, []);
+
+  function sentimentIcon(s) {
+    if (s === "bullish") return <FaSmile className="text-green-400 inline mb-1" title="Bullish" />;
+    if (s === "bearish") return <FaFrown className="text-red-400 inline mb-1" title="Bearish" />;
+    return <FaMeh className="text-yellow-400 inline mb-1" title="Neutral" />;
   }
 
   return (
@@ -94,53 +92,30 @@ export default function AIInsights() {
         <FaRobot className="text-[#2563eb] text-2xl" />
         <h2 className="text-2xl font-bold text-white">AI Insights & News</h2>
       </div>
-
-      {/* Risk & Safety */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <FaShieldAlt className="text-green-400" />
-          <span className="text-lg font-bold text-green-300">Risk & Safety</span>
-        </div>
-        <div className="space-y-3">
-          {risks.map((r, i) => (
+      <div className="flex items-center mb-8 gap-3">
+        <span className="text-lg font-semibold text-white">
+          Sentiment:
+        </span>
+        {sentimentIcon(sentiment)}
+        <span
+          className={`capitalize font-bold text-lg ${
+            sentiment === "bullish"
+              ? "text-green-400"
+              : sentiment === "bearish"
+              ? "text-red-400"
+              : "text-yellow-300"
+          }`}
+        >
+          {sentiment}
+        </span>
+      </div>
+      {loading ? (
+        <div className="text-blue-400 text-lg py-8 animate-pulse">Loading latest crypto news…</div>
+      ) : (
+        <div className="space-y-5">
+          {news.map((n, i) => (
             <div
               key={i}
-              className={`border-l-4 rounded-r-xl px-4 py-3 mb-1 font-semibold shadow ${riskColor(
-                r.severity
-              )}`}
-            >
-              <span className="uppercase mr-2 text-xs opacity-80">{r.type}:</span>
-              {r.risk}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Run AI Analysis */}
-      <div className="flex items-center mb-8">
-        <button
-          className="flex items-center gap-2 px-6 py-2 bg-[#2563eb] text-white font-bold rounded-xl shadow hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-400"
-          onClick={runAI}
-          disabled={thinking}
-        >
-          <FaBolt />
-          {thinking ? "AI is thinking..." : "Run AI Analysis"}
-        </button>
-        {thinking && (
-          <span className="ml-4 animate-pulse text-blue-400 font-bold text-lg">Analyzing...</span>
-        )}
-      </div>
-
-      {/* News & Sentiment */}
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <FaBolt className="text-yellow-400" />
-          <span className="text-lg font-bold text-yellow-300">Latest News & Sentiment</span>
-        </div>
-        <div className="space-y-4">
-          {news.map((n) => (
-            <div
-              key={n.id}
               className="bg-[#18181b] border border-[#232] rounded-xl p-4 flex flex-col md:flex-row md:items-center gap-4 shadow"
             >
               <div className="flex items-center gap-2 min-w-[95px]">
@@ -158,13 +133,22 @@ export default function AIInsights() {
                 >
                   {n.title}
                 </a>
-                <div className="text-gray-300 text-xs">{n.source} — {n.date}</div>
-                <div className="text-gray-100">{n.summary}</div>
+                <div className="text-gray-300 text-xs">
+                  {n.source} — {n.date}
+                </div>
+                {n.summary && (
+                  <div className="text-gray-100">{n.summary}</div>
+                )}
               </div>
             </div>
           ))}
+          {news.length === 0 && (
+            <div className="text-center text-gray-400 py-8">
+              No news found.
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
