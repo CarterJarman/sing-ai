@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { FaEye, FaPlus, FaTrash } from "react-icons/fa";
 
-// Get your Etherscan API key from .env (VITE_ETHERSCAN_API_KEY)
 const ETHERSCAN_API_KEY = import.meta.env.VITE_ETHERSCAN_API_KEY;
 
 // Utilities to get/set watched wallets from localStorage
@@ -17,12 +16,34 @@ function setWatchedWallets(list) {
 }
 
 export default function WalletWatch() {
+  // If no API key, show placeholder UI and exit early
+  if (!ETHERSCAN_API_KEY) {
+    return (
+      <div className="max-w-2xl mx-auto px-2 pt-12 pb-16 text-center">
+        <FaEye className="text-blue-400 text-3xl mx-auto mb-3" />
+        <h2 className="text-2xl font-bold text-white mb-2">Whale Wallet Watch</h2>
+        <div className="text-gray-400 mb-4">
+          Wallet tracking is available only with a local Etherscan API key.
+          <br />
+          <span className="text-xs">
+            (API key missing: this feature is disabled on public hosting like Netlify Free. Run locally for full functionality.)
+          </span>
+        </div>
+        <div className="text-sm text-gray-500 mt-6">
+          <b>How to use locally:</b> <br />
+          Add your API key in a <code>.env</code> file: <br />
+          <code>VITE_ETHERSCAN_API_KEY=your-api-key-here</code>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Normal code below (same as before) ---
   const [wallets, setWallets] = useState(getWatchedWallets());
   const [newAddr, setNewAddr] = useState("");
   const [balances, setBalances] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // Fetch ETH balance for an address using Etherscan API
   async function fetchBalance(addr) {
     setLoading(true);
     try {
