@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { FaStar, FaPlus, FaCog, FaBolt, FaTrash } from "react-icons/fa";
+import Clock from "../Clock";
+
 
 // Utility: get/set watchlist from localStorage
 function getStoredWatchlist() {
@@ -134,18 +136,19 @@ export default function Dashboard() {
     <div className="max-w-5xl mx-auto px-2 pt-4 pb-12">
       {/* Watchlist */}
       <div className="mb-10">
-        <div className="flex items-center mb-4 gap-4">
-          <FaStar className="text-yellow-400 text-2xl" />
-          <h2 className="text-2xl font-bold text-white flex-1">
-            Your Watchlist
-          </h2>
-          <button
-            onClick={() => setAddOpen((v) => !v)}
-            className="bg-[#2563eb] hover:bg-blue-700 transition text-white rounded-xl px-4 py-2 text-sm font-semibold flex items-center gap-2 shadow"
-          >
-            <FaPlus /> Add Coin
-          </button>
-        </div>
+<div className="flex items-center mb-4 gap-4">
+  <FaStar className="text-yellow-400 text-2xl" />
+  <h2 className="text-2xl font-bold text-white flex-1">
+    Your Watchlist
+  </h2>
+  <Clock />
+  <button
+    onClick={() => setAddOpen((v) => !v)}
+    className="bg-[#2563eb] hover:bg-blue-700 transition text-white rounded-xl px-4 py-2 text-sm font-semibold flex items-center gap-2 shadow"
+  >
+    <FaPlus /> Add Coin
+  </button>
+</div>
         {addOpen && (
           <div className="flex gap-2 mb-3 items-center flex-wrap">
             <input

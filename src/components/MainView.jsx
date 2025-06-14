@@ -1,3 +1,5 @@
+// src/components/MainView.jsx
+
 import React from "react";
 import Landing from "./tabs/Landing";
 import ChartVision from "./tabs/ChartVision";
@@ -7,6 +9,8 @@ import NewCoins from "./tabs/NewCoins";
 import Tokenomics from "./tabs/Tokenomics";
 import AIInsights from "./tabs/AIInsights";
 import APISources from "./tabs/APISources";
+import Portfolio from "./tabs/Portfolio";
+import WalletWatch from "./tabs/WalletWatch";
 
 export function MainView({ tab }) {
   return (
@@ -19,6 +23,8 @@ export function MainView({ tab }) {
       {tab === "Tokenomics" && <Tokenomics />}
       {tab === "AI Insights" && <AIInsights />}
       {tab === "API Sources" && <APISources />}
+      {tab === "Portfolio" && <Portfolio />}
+      {tab === "Wallet Watch" && <WalletWatch />}
     </div>
   );
 }

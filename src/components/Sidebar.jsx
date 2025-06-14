@@ -1,13 +1,16 @@
 import React from "react";
-import { AiOutlineDashboard, AiOutlineSearch, AiOutlineStar, AiOutlineClockCircle, AiOutlinePieChart, AiOutlineRobot } from "react-icons/ai";
-import { FaChartLine } from "react-icons/fa6";
+import { AiOutlineDashboard, AiOutlineSearch, AiOutlineStar, AiOutlineClockCircle, AiOutlinePieChart, AiOutlineRobot, AiOutlineBook } from "react-icons/ai";
+import { FaChartLine, FaDollarSign } from "react-icons/fa6";
 import { FaNetworkWired } from "react-icons/fa";
+import { FaEye } from "react-icons/fa";
 
 const tabs = [
   { name: "Landing", icon: <AiOutlineDashboard /> },
+  { name: "Portfolio", icon: <FaDollarSign /> },
   { name: "Dashboard", icon: <AiOutlineStar /> },
   { name: "Scanner", icon: <AiOutlineSearch /> },
   { name: "New Coins", icon: <AiOutlineClockCircle /> },
+  { name: "Wallet Watch", icon: <FaEye /> },
   { name: "Tokenomics", icon: <AiOutlinePieChart /> },
   { name: "AI Insights", icon: <AiOutlineRobot /> },
   { name: "Chart Vision", icon: <FaChartLine /> },
